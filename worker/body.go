@@ -1,10 +1,9 @@
 package worker
 
 import (
+	"errors"
 	"strconv"
 	"strings"
-
-	"../buffer"
 )
 
 type state int32
@@ -16,13 +15,16 @@ type Worker struct {
 	currentState state
 	// isReady            bool
 	// panicEnd           bool
-	processID          int32
+	//processID          int32
 	Do                 func(camputedString string)
 	corector           func(camputedString string) bool
 	retuningResultByID func() int32
 	calculateResult    func(camputedString string)
 	IsFinished         func() bool
-	bufferRef          *buffer.Buffer
+	result             int64
+	GetResult          func() (int64, error)
+	Wait               func() bool
+	Continue           func() bool
 }
 
 //GetDefaultWorker return fulling instance Worker and return a link on it
@@ -67,22 +69,22 @@ func GetDefaultWorker() *Worker {
 			switch splitStrings[1] {
 			case "+":
 				{
-					linkObject.bufferRef.Result[linkObject.resultID] = first + second
+					linkObject.result = first + second
 				}
 
 			case "-":
 				{
-					linkObject.bufferRef.Result[linkObject.resultID] = first - second
+					linkObject.result = first - second
 				}
 
 			case "*":
 				{
-					linkObject.bufferRef.Result[linkObject.resultID] = first * second
+					linkObject.result = first * second
 				}
 
 			case "/":
 				{
-					linkObject.bufferRef.Result[linkObject.resultID] = first / second
+					linkObject.result = first / second
 				}
 			}
 
@@ -90,8 +92,25 @@ func GetDefaultWorker() *Worker {
 		linkObject.currentState = finished
 	}
 
+	linkObject.GetResult = func() (int64, error) {
+		if linkObject.IsFinished() {
+			return linkObject.result, nil
+		}
+		return 0, errors.New("not ready")
+	}
+
 	linkObject.IsFinished = func() bool {
 		return linkObject.currentState == finished
+	}
+
+	linkObject.Wait = func() bool {
+		linkObject.currentState = sleep
+		return true
+	}
+
+	linkObject.Continue = func() bool {
+		linkObject.currentState = runing
+		return true
 	}
 
 	linkObject.currentState = sleep
