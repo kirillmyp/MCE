@@ -27,9 +27,11 @@ type Worker struct {
 	Continue           func() bool
 }
 
-//GetDefaultWorker return fulling instance Worker and return a link on it
-func GetDefaultWorker() *Worker {
+//GetDefaultWorker fulling instance Worker and return a link on it
+func GetDefaultWorker(resultID int32) *Worker {
 	var linkObject Worker
+
+	linkObject.resultID = resultID
 	linkObject.Do = func(camputedString string) {
 		linkObject.calculateResult(camputedString)
 	}
